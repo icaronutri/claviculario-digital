@@ -23,6 +23,8 @@ Substitui o livro físico do Sgt de Dia para a cautela das chaves das viaturas, 
 
 ## Versão em arquivo único (HTML) — sem instalar nada
 
+**Online (link):** <https://icaronutri.github.io/claviculario-digital/> (publicado pelo GitHub Pages).
+
 O arquivo **`claviculario.html`** é o sistema inteiro num arquivo só. É só **dar dois cliques** e ele abre no Chrome ou no Edge, sem instalar nada e sem internet.
 
 - **Teste rápido:** abra o arquivo, vá em **Backup → Carregar dados de exemplo**.
