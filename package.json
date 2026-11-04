@@ -11,7 +11,8 @@
     "start": "node --disable-warning=ExperimentalWarning server.js",
     "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js",
     "teste": "node --disable-warning=ExperimentalWarning server.js --teste",
-    "html": "node html/gerar.js"
+    "html": "node html/gerar.js",
+    "html:servir": "node ferramentas/servir-html.js 8080 --abrir"
   },
   "license": "UNLICENSED"
 }

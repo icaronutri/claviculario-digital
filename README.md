@@ -33,6 +33,8 @@ O arquivo **`claviculario.html`** é o sistema inteiro num arquivo só. É só *
 - Use sempre o **mesmo navegador** e **não use a janela anônima**.
 - Diferença para a versão com servidor (abaixo): não tem login e funciona **só naquele computador**.
 
+**Numa porta local (http://localhost:8080):** dê dois cliques em **`ABRIR-HTML-PORTA-8080.bat`**. Ele usa o Node.js, se estiver instalado, ou o PowerShell do Windows (não precisa instalar nada). Os dados ficam separados dos do arquivo aberto com dois cliques, porque o navegador trata cada endereço como um site diferente.
+
 Para gerar o arquivo de novo depois de mudar as telas: `npm run html`.
 
 ## Versão com servidor — testar no Windows
