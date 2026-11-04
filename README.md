@@ -21,7 +21,18 @@ Substitui o livro físico do Sgt de Dia para a cautela das chaves das viaturas, 
 - **Militares.** Cadastro de posto, nome, SARAM, setor e telefone. Também dá para cadastrar na hora, direto na tela de saída.
 - **Perfis.** *Operador* (computador do Sgt de Dia) e *administrador* (cadastra viaturas fixas, define a quantidade de posições, gerencia usuários e vê a auditoria).
 
-## Como rodar
+## Testar no Windows (jeito mais fácil)
+
+1. Instale o **Node.js** (versão **LTS**) em <https://nodejs.org/pt>, clicando em "Avançar" até o fim.
+2. No GitHub, clique em **Code → Download ZIP** e extraia a pasta.
+3. Dê dois cliques em **`INICIAR-TESTE.bat`**. O navegador abre sozinho com **dados de exemplo**.
+   - Login: **sgtdia / sgtdia123** (Sgt de Dia) ou **admin / admin123** (administrador).
+   - Os dados de teste ficam em `dados/teste.db`. Para recomeçar o teste do zero, apague esse arquivo.
+4. Para usar de verdade, com banco limpo, use **`INICIAR.bat`**.
+
+Enquanto estiver usando, **não feche a janela preta** que abre junto: ela é o servidor do sistema.
+
+## Como rodar (linha de comando)
 
 Precisa apenas do [Node.js](https://nodejs.org) **22.13 ou mais novo** — não há dependências para instalar.
 
@@ -29,7 +40,7 @@ Precisa apenas do [Node.js](https://nodejs.org) **22.13 ou mais novo** — não 
 npm start
 ```
 
-Abra <http://localhost:3000> e entre com **admin / admin123**. Depois, troque a senha.
+Ou `npm run teste` para abrir com dados de exemplo. Abra <http://localhost:3000> e entre com **admin / admin123**. Depois, troque a senha.
 
 ### Primeira configuração
 1. **Viaturas → Posições do claviculário**: informe quantos números o claviculário tem (o padrão é 30).
