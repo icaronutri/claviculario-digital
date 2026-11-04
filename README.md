@@ -21,7 +21,19 @@ Substitui o livro físico do Sgt de Dia para a cautela das chaves das viaturas, 
 - **Militares.** Cadastro de posto, nome, SARAM, setor e telefone. Também dá para cadastrar na hora, direto na tela de saída.
 - **Perfis.** *Operador* (computador do Sgt de Dia) e *administrador* (cadastra viaturas fixas, define a quantidade de posições, gerencia usuários e vê a auditoria).
 
-## Testar no Windows (jeito mais fácil)
+## Versão em arquivo único (HTML) — sem instalar nada
+
+O arquivo **`claviculario.html`** é o sistema inteiro num arquivo só. É só **dar dois cliques** e ele abre no Chrome ou no Edge, sem instalar nada e sem internet.
+
+- **Teste rápido:** abra o arquivo, vá em **Backup → Carregar dados de exemplo**.
+- **Monitor:** clique em **🖥 Monitor**, arraste a janela para a segunda tela e aperte ⛶.
+- Os dados ficam **guardados no navegador daquele computador**. Faça **Backup → Salvar backup agora** toda semana e guarde o arquivo num pendrive; para recuperar, use **Restaurar um backup**.
+- Use sempre o **mesmo navegador** e **não use a janela anônima**.
+- Diferença para a versão com servidor (abaixo): não tem login e funciona **só naquele computador**.
+
+Para gerar o arquivo de novo depois de mudar as telas: `npm run html`.
+
+## Versão com servidor — testar no Windows
 
 1. Instale o **Node.js** (versão **LTS**) em <https://nodejs.org/pt>, clicando em "Avançar" até o fim.
 2. No GitHub, clique em **Code → Download ZIP** e extraia a pasta.

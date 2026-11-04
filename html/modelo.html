@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1f3a5f">
+  <title>Claviculário Digital</title>
+  <link rel="icon" href="data:image/svg+xml,{{ICONE_URL}}">
+  <style>
+{{CSS}}
+  </style>
+</head>
+<body>
+  <!-- Controle do Sgt de Dia -->
+  <div id="tela-app" hidden>
+    <header class="topo">
+      <div class="marca">{{ICONE}} Claviculário</div>
+      <nav id="menu">
+        <a href="#painel">Controle</a>
+        <a href="#historico">Cautelas</a>
+        <a href="#temporarias">Temporárias</a>
+        <a href="#servicos">Serviços</a>
+        <a href="#militares">Militares</a>
+        <a href="#viaturas">Viaturas</a>
+        <a href="#backup">Backup</a>
+        <a href="#auditoria">Auditoria</a>
+      </nav>
+      <div class="usuario">
+        <button class="btn monitor-btn" id="btn-monitor" title="Abrir o monitor na segunda tela">🖥 Monitor</button>
+      </div>
+    </header>
+    <div class="faixa-servico" id="faixa-servico"></div>
+    <main id="conteudo"></main>
+  </div>
+
+  <!-- Monitor (segunda tela) -->
+  <div id="tela-monitor" hidden>
+    <header class="m-topo">
+      <div class="m-titulo">{{ICONE}} CLAVICULÁRIO</div>
+      <div class="m-sgt" id="m-sgt"></div>
+      <div class="m-totais" id="m-totais"></div>
+      <div class="m-relogio"><span id="m-hora"></span><small id="m-data"></small></div>
+      <button id="m-tela-cheia" title="Tela cheia">⛶</button>
+    </header>
+    <main id="m-grade" class="m-grade"></main>
+  </div>
+
+  <dialog id="modal">
+    <form method="dialog" class="modal-corpo" id="modal-form">
+      <header><h2 id="modal-titulo"></h2><button type="button" class="btn link fechar" aria-label="Fechar">✕</button></header>
+      <div id="modal-conteudo"></div>
+      <p class="erro" id="modal-erro"></p>
+      <footer id="modal-acoes"></footer>
+    </form>
+  </dialog>
+  <div id="aviso" role="status" aria-live="polite"></div>
+
+  <script>
+{{JS}}
+  </script>
+</body>
+</html>
