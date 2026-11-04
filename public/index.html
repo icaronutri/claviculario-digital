@@ -9,11 +9,11 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- Login -->
   <section id="tela-login" class="login" hidden>
     <form id="form-login" class="cartao login-cartao">
       <img src="icone.svg" alt="" width="56" height="56">
       <h1>Claviculário Digital</h1>
+      <p class="sub">Controle de chaves de viaturas</p>
       <label>Usuário <input name="login" autocomplete="username" required></label>
       <label>Senha <input name="senha" type="password" autocomplete="current-password" required></label>
       <button class="btn primario">Entrar</button>
@@ -21,28 +21,30 @@
     </form>
   </section>
 
-  <!-- Aplicação -->
   <div id="tela-app" hidden>
     <header class="topo">
       <div class="marca"><img src="icone.svg" alt="" width="28" height="28"> Claviculário</div>
       <nav id="menu">
-        <a href="#painel">Painel</a>
-        <a href="#historico">Histórico</a>
-        <a href="#pessoas">Pessoas</a>
-        <a href="#chaves" data-admin>Chaves</a>
+        <a href="#painel">Controle</a>
+        <a href="#historico">Cautelas</a>
+        <a href="#temporarias">Temporárias</a>
+        <a href="#servicos">Serviços</a>
+        <a href="#militares">Militares</a>
+        <a href="#viaturas" data-admin>Viaturas</a>
         <a href="#usuarios" data-admin>Usuários</a>
         <a href="#auditoria" data-admin>Auditoria</a>
       </nav>
       <div class="usuario">
+        <button class="btn monitor-btn" id="btn-monitor" title="Abrir o monitor na segunda tela">🖥 Monitor</button>
         <span id="nome-usuario"></span>
         <button class="btn link" id="btn-senha">Senha</button>
         <button class="btn link" id="btn-sair">Sair</button>
       </div>
     </header>
+    <div class="faixa-servico" id="faixa-servico"></div>
     <main id="conteudo"></main>
   </div>
 
-  <!-- Modal genérico -->
   <dialog id="modal">
     <form method="dialog" class="modal-corpo" id="modal-form">
       <header><h2 id="modal-titulo"></h2><button type="button" class="btn link fechar" aria-label="Fechar">✕</button></header>
