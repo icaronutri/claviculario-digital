@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1f3a5f">
+  <title>Claviculário Digital</title>
+  <link rel="icon" href="icone.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Login -->
+  <section id="tela-login" class="login" hidden>
+    <form id="form-login" class="cartao login-cartao">
+      <img src="icone.svg" alt="" width="56" height="56">
+      <h1>Claviculário Digital</h1>
+      <label>Usuário <input name="login" autocomplete="username" required></label>
+      <label>Senha <input name="senha" type="password" autocomplete="current-password" required></label>
+      <button class="btn primario">Entrar</button>
+      <p class="erro" id="erro-login"></p>
+    </form>
+  </section>
+
+  <!-- Aplicação -->
+  <div id="tela-app" hidden>
+    <header class="topo">
+      <div class="marca"><img src="icone.svg" alt="" width="28" height="28"> Claviculário</div>
+      <nav id="menu">
+        <a href="#painel">Painel</a>
+        <a href="#historico">Histórico</a>
+        <a href="#pessoas">Pessoas</a>
+        <a href="#chaves" data-admin>Chaves</a>
+        <a href="#usuarios" data-admin>Usuários</a>
+        <a href="#auditoria" data-admin>Auditoria</a>
+      </nav>
+      <div class="usuario">
+        <span id="nome-usuario"></span>
+        <button class="btn link" id="btn-senha">Senha</button>
+        <button class="btn link" id="btn-sair">Sair</button>
+      </div>
+    </header>
+    <main id="conteudo"></main>
+  </div>
+
+  <!-- Modal genérico -->
+  <dialog id="modal">
+    <form method="dialog" class="modal-corpo" id="modal-form">
+      <header><h2 id="modal-titulo"></h2><button type="button" class="btn link fechar" aria-label="Fechar">✕</button></header>
+      <div id="modal-conteudo"></div>
+      <p class="erro" id="modal-erro"></p>
+      <footer id="modal-acoes"></footer>
+    </form>
+  </dialog>
+
+  <div id="aviso" role="status" aria-live="polite"></div>
+  <script src="assinatura.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
