@@ -1,18 +1,11 @@
 {
   "name": "claviculario-digital",
-  "version": "1.0.0",
-  "description": "Sistema web de controle de chaves (claviculário): retirada, devolução, autorizações e histórico.",
-  "main": "server.js",
+  "version": "2.0.0",
+  "description": "Claviculário digital de viaturas em HTML, CSS e JavaScript (roda no navegador, sem servidor).",
   "private": true,
-  "engines": {
-    "node": ">=22.13"
-  },
   "scripts": {
-    "start": "node --disable-warning=ExperimentalWarning server.js",
-    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js",
-    "teste": "node --disable-warning=ExperimentalWarning server.js --teste",
-    "html": "node html/gerar.js",
-    "html:servir": "node ferramentas/servir-html.js 8080 --abrir"
+    "test": "node --test test/*.test.js",
+    "local": "node ferramentas/servidor-local.js 8080 --abrir"
   },
   "license": "UNLICENSED"
 }

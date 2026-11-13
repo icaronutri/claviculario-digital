@@ -1,23 +1,10 @@
 'use strict';
-/* global criarQuadroAssinatura */
+/* global Local, criarQuadroAssinatura, $, esc, dataHora, hora, nomeMil, decorrido */
+// Tela de controle do Sgt de Dia.
 
-const $ = (s, el = document) => el.querySelector(s);
-const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const dataHora = (iso) => (iso ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—');
-const hora = (iso) => (iso ? new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '');
-const nomeMil = (posto, nome) => [posto, nome].filter(Boolean).join(' ');
-const vtrNome = (v) => v.prefixo || v.vtr_prefixo || v.placa || v.vtr_placa;
-function decorrido(iso) {
-  const min = Math.max(0, Math.floor((Date.now() - new Date(iso)) / 60000));
-  if (min < 60) return `${min} min`;
-  const h = Math.floor(min / 60);
-  return h < 24 ? `${h}h${String(min % 60).padStart(2, '0')}` : `${Math.floor(h / 24)}d ${h % 24}h`;
-}
 const STATUS = { disponivel: 'Disponível', em_uso: 'Em uso', manutencao: 'Manutenção', vaga: 'Vago' };
 
-let eu = null;
 let servico = null;
-let fonteEventos = null;
 let recarregarTela = null;
 let timerPainel = null;
 
@@ -27,11 +14,7 @@ async function atualizarServico() {
 }
 
 async function api(metodo, url, corpo) {
-  const r = await fetch(url, { method: metodo, headers: corpo ? { 'Content-Type': 'application/json' } : {}, body: corpo ? JSON.stringify(corpo) : undefined, credentials: 'same-origin' });
-  const dados = await r.json().catch(() => ({}));
-  if (r.status === 401 && url !== '/api/login') { mostrarLogin(); throw new Error(dados.erro || 'Sessão expirada'); }
-  if (!r.ok) throw new Error(dados.erro || `Erro ${r.status}`);
-  return dados;
+  return Local.chamar(metodo, url, corpo);
 }
 function aviso(msg, tipo = 'ok') {
   const el = $('#aviso');
@@ -107,43 +90,28 @@ async function seletorMilitar(container, { nome, rotulo, selecionado }) {
   return () => sel.value;
 }
 
-// ---------- login / sessão ----------
-function mostrarLogin() {
-  fonteEventos?.close(); fonteEventos = null;
-  $('#tela-app').hidden = true; $('#tela-login').hidden = false;
-  $('#form-login [name=login]').focus();
+// ---------- início / sincronização entre janelas ----------
+let monitorJanela = null;
+$('#btn-monitor').onclick = () => {
+  monitorJanela = window.open(new URL('monitor.html', location.href).href, 'claviculario-monitor', 'popup,width=1280,height=800');
+};
+const canal = 'BroadcastChannel' in window ? new BroadcastChannel('claviculario') : null;
+function avisarOutrasJanelas() {
+  canal?.postMessage('atualizar');
+  try { localStorage.setItem('claviculario-ping', String(Date.now())); } catch { /* sem localStorage */ }
+  try { monitorJanela && !monitorJanela.closed && monitorJanela.postMessage('atualizar', '*'); } catch { /* janela fechada */ }
 }
-$('#form-login').addEventListener('submit', async (e) => {
-  e.preventDefault(); $('#erro-login').textContent = '';
-  try { eu = await api('POST', '/api/login', valorForm(e.target)); e.target.reset(); iniciar(); }
-  catch (err) { $('#erro-login').textContent = err.message; }
-});
-$('#btn-sair').onclick = async () => { await api('POST', '/api/logout').catch(() => {}); eu = null; mostrarLogin(); };
-$('#btn-monitor').onclick = () => window.open('/monitor', 'claviculario-monitor', 'popup,width=1280,height=800');
-$('#btn-senha').onclick = () => modal({
-  titulo: 'Trocar minha senha',
-  html: `<label>Senha atual <input type="password" name="atual"></label><label>Nova senha <input type="password" name="nova" minlength="6"></label>`,
-  acoes: [{ texto: 'Salvar', classe: 'primario', acao: async () => { await api('POST', '/api/minha-senha', valorForm($('#modal-conteudo'))); aviso('Senha alterada'); } }],
-});
+Local.aoMudar = avisarOutrasJanelas;
+function aoMudarFora() {
+  atualizarServico().catch(() => {});
+  if (!$('#modal').open) recarregarTela?.().catch(() => {});
+}
+canal && (canal.onmessage = aoMudarFora);
+window.addEventListener('storage', (e) => { if (e.key === 'claviculario-ping') aoMudarFora(); });
 
 function iniciar() {
-  $('#tela-login').hidden = true; $('#tela-app').hidden = false;
-  $('#nome-usuario').textContent = eu.nome;
-  document.querySelectorAll('[data-admin]').forEach((el) => { el.hidden = eu.perfil !== 'admin'; });
-  conectarEventos();
+  $('#tela-app').hidden = false;
   navegar();
-}
-function conectarEventos() {
-  fonteEventos?.close();
-  fonteEventos = new EventSource('/api/eventos');
-  let t;
-  fonteEventos.addEventListener('atualizar', () => {
-    clearTimeout(t);
-    t = setTimeout(() => {
-      atualizarServico().catch(() => {});
-      if (!$('#modal').open) recarregarTela?.().catch(() => {});
-    }, 300);
-  });
 }
 
 // ---------- faixa do serviço ----------
@@ -182,10 +150,9 @@ async function abrirPassagem() {
 }
 
 // ---------- roteamento ----------
-const telas = { painel: telaPainel, historico: telaHistorico, temporarias: telaTemporarias, servicos: telaServicos, militares: telaMilitares, viaturas: telaViaturas, usuarios: telaUsuarios, auditoria: telaAuditoria };
+const telas = { painel: telaPainel, historico: telaHistorico, temporarias: telaTemporarias, servicos: telaServicos, militares: telaMilitares, viaturas: telaViaturas, backup: telaBackup, auditoria: telaAuditoria };
 function navegar() {
-  if (!eu) return;
-  let nome = location.hash.slice(1) || 'painel';
+    let nome = location.hash.slice(1) || 'painel';
   if (!telas[nome]) nome = 'painel';
   document.querySelectorAll('#menu a').forEach((a) => a.classList.toggle('ativo', a.getAttribute('href') === `#${nome}`));
   recarregarTela = null;
@@ -359,7 +326,7 @@ function abrirSaidaTemp(p, depois) {
 async function telaHistorico(el) {
   const [viaturas, servicos] = await Promise.all([api('GET', '/api/viaturas?todas=1'), api('GET', '/api/servicos')]);
   const hoje = new Date(), ini = new Date(hoje - 30 * 864e5), iso = (d) => d.toISOString().slice(0, 10);
-  const preServ = new URLSearchParams(location.search).get('servico') || '';
+  let preServ = ''; try { preServ = sessionStorage.getItem('filtro-servico') || ''; sessionStorage.removeItem('filtro-servico'); } catch { /* */ }
   el.innerHTML = `
     <div class="cabecalho"><h1>Livro de cautelas</h1><button class="btn" onclick="print()">🖨 Imprimir</button></div>
     <form class="filtros barra" id="f-hist">
@@ -368,7 +335,7 @@ async function telaHistorico(el) {
       <label>Viatura <select name="viatura_id"><option value="">Todas</option>${viaturas.map((v) => `<option value="${v.id}">${esc(v.prefixo || '')} ${esc(v.modelo)} ${esc(v.placa)}</option>`).join('')}</select></label>
       <label>Serviço <select name="servico_id"><option value="">Todos</option>${servicos.map((s) => `<option value="${s.id}" ${String(s.id) === preServ ? 'selected' : ''}>${dataHora(s.inicio)} — ${esc(s.sargento)}</option>`).join('')}</select></label>
       <label class="check"><input type="checkbox" name="abertas"> Só em uso</label>
-      <button class="btn primario">Filtrar</button><a class="btn" id="btn-csv">Exportar Excel (CSV)</a>
+      <button class="btn primario">Filtrar</button><button type="button" class="btn" id="btn-csv">Exportar Excel (CSV)</button>
     </form>
     <div class="tabela-wrap"><table><thead><tr><th>Pos.</th><th>Viatura</th><th>Motorista / Missão</th><th>Saída</th><th>Devolução</th><th>Km</th><th>Sgt de Dia</th><th></th></tr></thead>
     <tbody id="t-hist"></tbody></table></div>`;
@@ -376,8 +343,8 @@ async function telaHistorico(el) {
     const v = valorForm($('#f-hist')), prm = new URLSearchParams();
     for (const k of ['de', 'ate', 'viatura_id', 'servico_id']) if (v[k]) prm.set(k, v[k]);
     if (v.abertas) prm.set('abertas', '1');
-    $('#btn-csv').href = `/api/cautelas?${prm}&formato=csv`;
     const linhas = await api('GET', `/api/cautelas?${prm}`);
+    $('#btn-csv').onclick = () => baixarCsv(linhas);
     $('#t-hist').innerHTML = linhas.map((c) => `<tr>
       <td>${c.posicao ?? ''}</td>
       <td><b>${esc(c.vtr_prefixo || '')}</b> ${esc(c.vtr_modelo)}<br><small>${esc(c.vtr_placa)}</small></td>
@@ -437,7 +404,7 @@ async function telaServicos(el) {
       <div class="tabela-wrap"><table><thead><tr><th>Sgt de Dia</th><th>Início</th><th>Término</th><th>Saídas</th><th>Devoluções</th><th>Observações</th><th></th></tr></thead><tbody>
       ${linhas.map((s) => `<tr><td><b>${esc(s.sargento)}</b></td><td>${dataHora(s.inicio)}</td><td>${s.fim ? dataHora(s.fim) : '<span class="tag disponivel">De serviço</span>'}</td>
         <td>${s.saidas}</td><td>${s.retornos}</td><td><small>${esc([s.obs_assuncao, s.obs_passagem && 'Passagem: ' + s.obs_passagem].filter(Boolean).join(' · '))}</small></td>
-        <td><a class="btn pequeno" href="?servico=${s.id}#historico">Ver cautelas</a></td></tr>`).join('') || '<tr><td colspan="7" class="vazio">Nenhum serviço registrado.</td></tr>'}
+        <td><a class="btn pequeno" href="#historico" onclick="sessionStorage.setItem('filtro-servico','${s.id}')">Ver cautelas</a></td></tr>`).join('') || '<tr><td colspan="7" class="vazio">Nenhum serviço registrado.</td></tr>'}
       </tbody></table></div>`;
     $('#b-pass').onclick = () => abrirPassagem();
   };
@@ -517,41 +484,139 @@ async function telaViaturas(el) {
   await carregar();
 }
 
-// ---------- usuários (admin) ----------
-async function telaUsuarios(el) {
-  let lista = [];
-  const carregar = async () => {
-    lista = await api('GET', '/api/usuarios');
-    el.innerHTML = `<div class="cabecalho"><h1>Usuários do sistema</h1><button class="btn primario" id="novo-u">+ Novo usuário</button></div>
-      <p class="sub">Dica: crie um login <b>operador</b> para o computador do Sgt de Dia. Quem está de serviço é registrado na passagem de serviço, não no login.</p>
-      <div class="tabela-wrap"><table><thead><tr><th>Nome</th><th>Login</th><th>Perfil</th><th>Situação</th><th></th></tr></thead><tbody>
-      ${lista.map((u) => `<tr class="${u.ativo ? '' : 'inativo'}"><td>${esc(u.nome)}</td><td>${esc(u.login)}</td><td>${u.perfil === 'admin' ? 'Administrador' : 'Operador'}</td>
-        <td>${u.ativo ? 'Ativo' : 'Inativo'}</td><td><button class="btn pequeno" data-ed="${u.id}">Editar</button></td></tr>`).join('')}</tbody></table></div>`;
-    $('#novo-u').onclick = () => form();
-    el.querySelector('tbody').onclick = (e) => { const id = Number(e.target.dataset.ed); if (id) form(lista.find((u) => u.id === id)); };
-  };
-  const form = (u = {}) => modal({
-    titulo: u.id ? `Editar ${u.login}` : 'Novo usuário',
-    html: `<label>Nome <input name="nome" value="${esc(u.nome)}"></label>
-      ${u.id ? '' : '<label>Login <input name="login" autocomplete="off"></label>'}
-      <label>${u.id ? 'Nova senha (em branco = manter)' : 'Senha'} <input type="password" name="senha" autocomplete="new-password"></label>
-      <label>Perfil <select name="perfil"><option value="operador">Operador (Sgt de Dia)</option><option value="admin" ${u.perfil === 'admin' ? 'selected' : ''}>Administrador</option></select></label>
-      ${u.id ? `<label class="check"><input type="checkbox" name="ativo" ${u.ativo ? 'checked' : ''}> Ativo</label>` : ''}`,
-    acoes: [{ texto: 'Salvar', classe: 'primario', acao: async () => {
-      const v = valorForm($('#modal-conteudo'));
-      await (u.id ? api('PUT', `/api/usuarios/${u.id}`, v) : api('POST', '/api/usuarios', v));
-      aviso('Usuário salvo'); await carregar();
-    } }],
-  });
-  await carregar();
-}
-
 async function telaAuditoria(el) {
   const linhas = await api('GET', '/api/auditoria');
-  el.innerHTML = `<div class="cabecalho"><h1>Auditoria</h1></div><p class="sub">Últimas 300 ações registradas.</p>
-    <div class="tabela-wrap"><table><thead><tr><th>Quando</th><th>Usuário</th><th>Sgt de Dia</th><th>Ação</th><th>Detalhe</th></tr></thead><tbody>
-    ${linhas.map((a) => `<tr><td>${dataHora(a.em)}</td><td>${esc(a.usuario || '—')}</td><td><small>${esc(a.sargento)}</small></td><td>${esc(a.acao.replace(/_/g, ' '))}</td><td><small>${esc(a.detalhe)}</small></td></tr>`).join('')}
+  el.innerHTML = `<div class="cabecalho"><h1>Auditoria</h1></div><p class="sub">Últimas 500 ações registradas.</p>
+    <div class="tabela-wrap"><table><thead><tr><th>Quando</th><th>Sgt de Dia</th><th>Ação</th><th>Detalhe</th></tr></thead><tbody>
+    ${linhas.map((a) => `<tr><td>${dataHora(a.em)}</td><td><small>${esc(a.sargento)}</small></td><td>${esc(a.acao.replace(/_/g, ' '))}</td><td><small>${esc(a.detalhe)}</small></td></tr>`).join('')}
     </tbody></table></div>`;
 }
 
-api('GET', '/api/me').then((u) => { eu = u; iniciar(); }).catch(() => mostrarLogin());
+// ---------- exportação CSV (Excel) ----------
+function baixarArquivo(nome, conteudo, tipo) {
+  const url = URL.createObjectURL(new Blob([conteudo], { type: tipo }));
+  const a = Object.assign(document.createElement('a'), { href: url, download: nome });
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+function baixarCsv(linhas) {
+  const escCsv = (v) => { const s = v === null || v === undefined ? '' : String(v); return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const dt = (iso) => (iso ? new Date(iso).toLocaleString('pt-BR') : '');
+  const cols = [['Nº', (l) => l.id], ['Posição', (l) => l.posicao], ['Prefixo', (l) => l.vtr_prefixo], ['Modelo', (l) => l.vtr_modelo], ['Placa', (l) => l.vtr_placa],
+    ['Missão', (l) => l.missao], ['Destino', (l) => l.destino], ['Motorista (saída)', (l) => nomeMil(l.motorista_saida_posto, l.motorista_saida)],
+    ['SARAM', (l) => l.motorista_saida_ident], ['Saída', (l) => dt(l.saida_em)], ['Km saída', (l) => l.km_saida], ['Sgt de Dia (saída)', (l) => l.sgt_saida],
+    ['Situação', (l) => (!l.retorno_em ? 'Em uso' : l.encerramento === 'nao_retornou' ? 'Não retornou à STS' : 'Devolvida')],
+    ['Motorista (devolução)', (l) => nomeMil(l.motorista_retorno_posto, l.motorista_retorno)], ['Devolução', (l) => dt(l.retorno_em)],
+    ['Km retorno', (l) => l.km_retorno], ['Km rodados', (l) => (l.km_retorno != null && l.km_saida != null ? l.km_retorno - l.km_saida : '')],
+    ['Sgt de Dia (devolução)', (l) => l.sgt_retorno], ['Obs. saída', (l) => l.obs_saida], ['Obs. devolução', (l) => l.obs_retorno]];
+  const txt = '﻿' + [cols.map((c) => escCsv(c[0])).join(';'), ...linhas.map((l) => cols.map((c) => escCsv(c[1](l))).join(';'))].join('\r\n');
+  baixarArquivo(`cautelas-${new Date().toISOString().slice(0, 10)}.csv`, txt, 'text/csv;charset=utf-8');
+}
+
+// ---------- backup ----------
+const ultimoBackup = () => { try { return localStorage.getItem('claviculario-ultimo-backup'); } catch { return null; } };
+async function fazerBackup() {
+  const dados = await Local.exportar();
+  baixarArquivo(`backup-claviculario-${new Date().toISOString().slice(0, 16).replace(/[T:]/g, '-')}.json`, JSON.stringify(dados), 'application/json');
+  try { localStorage.setItem('claviculario-ultimo-backup', new Date().toISOString()); } catch { /* */ }
+  aviso('Backup salvo na pasta Downloads');
+}
+
+async function telaBackup(el) {
+  const E = await Local.carregar();
+  const ult = ultimoBackup();
+  let persistente = false;
+  try { persistente = await navigator.storage?.persisted?.(); } catch { /* */ }
+  el.innerHTML = `
+    <div class="cabecalho"><h1>Backup e configurações</h1></div>
+    <div class="cartao bloco">
+      <h2>💾 Backup dos dados</h2>
+      <p>Os dados ficam guardados <b>dentro deste navegador, neste computador</b>. Se alguém limpar o histórico ou os dados do navegador, eles se perdem.
+        Por isso, <b>salve um backup pelo menos uma vez por semana</b> (ex.: na passagem de serviço de segunda-feira) e guarde o arquivo num pendrive ou na rede.</p>
+      <p class="${ult && Date.now() - new Date(ult) < 7 * 864e5 ? 'ok-txt' : 'alerta-txt'}">Último backup: <b>${ult ? dataHora(ult) : 'nunca feito'}</b></p>
+      <div class="acoes-linha">
+        <button class="btn primario" id="b-backup">Salvar backup agora</button>
+        <label class="btn" for="f-restaurar">Restaurar um backup…</label><input type="file" id="f-restaurar" accept=".json,application/json" hidden>
+      </div>
+    </div>
+    <div class="cartao bloco">
+      <h2>📊 Situação</h2>
+      <p>${E.viaturas.filter((v) => v.ativa && v.tipo === 'fixa').length} viaturas fixas · ${E.pessoas.length} militares · ${E.cautelas.length} cautelas · ${E.servicos.length} serviços registrados</p>
+      <p class="sub">Armazenamento protegido contra limpeza automática do navegador: <b>${persistente ? 'sim' : 'não'}</b>${persistente ? '' : ' <button class="btn pequeno" id="b-persist">Proteger</button>'}</p>
+    </div>
+    <div class="cartao bloco">
+      <h2>🧪 Teste</h2>
+      <p>Carrega 12 viaturas, militares, cautelas e uma viatura do Rancho para testar o sistema. Só funciona com o sistema vazio.</p>
+      <div class="acoes-linha">
+        <button class="btn" id="b-exemplo" ${E.viaturas.length ? 'disabled' : ''}>Carregar dados de exemplo</button>
+        <button class="btn perigo-txt" id="b-apagar">Apagar TODOS os dados</button>
+      </div>
+    </div>`;
+  $('#b-backup').onclick = () => fazerBackup().then(() => telaBackup(el)).catch((e) => aviso(e.message, 'erro'));
+  $('#b-persist') && ($('#b-persist').onclick = async () => { await navigator.storage.persist?.(); telaBackup(el); });
+  $('#f-restaurar').onchange = async (e) => {
+    const arq = e.target.files[0]; if (!arq) return;
+    try {
+      const dados = JSON.parse(await arq.text());
+      modal({
+        titulo: 'Restaurar backup',
+        html: `<p>Isto vai <b>substituir todos os dados atuais</b> pelos do arquivo <b>${esc(arq.name)}</b> (gerado em ${dataHora(dados.gerado_em)}).</p>`,
+        acoes: [{ texto: 'Substituir e restaurar', classe: 'primario', acao: async () => { await Local.importar(dados); aviso('Backup restaurado'); await atualizarServico(); telaBackup(el); } }],
+      });
+    } catch (er) { aviso(er.message.includes('JSON') ? 'Arquivo inválido' : er.message, 'erro'); }
+    e.target.value = '';
+  };
+  $('#b-exemplo').onclick = async () => { await carregarExemplo(); aviso('Dados de exemplo carregados'); location.hash = '#painel'; };
+  $('#b-apagar').onclick = () => modal({
+    titulo: 'Apagar todos os dados',
+    html: '<p>Isto apaga <b>viaturas, militares, cautelas, assinaturas e serviços</b> deste computador. Faça um backup antes.</p><label>Para confirmar, digite <b>APAGAR</b> <input name="conf" autocomplete="off"></label>',
+    acoes: [{ texto: 'Apagar tudo', classe: 'primario perigo', acao: async () => {
+      if (valorForm($('#modal-conteudo')).conf.trim().toUpperCase() !== 'APAGAR') throw new Error('Digite APAGAR para confirmar');
+      await Local.apagarTudo(); aviso('Dados apagados'); await atualizarServico(); telaBackup(el);
+    } }],
+  });
+}
+
+// ---------- dados de exemplo ----------
+async function carregarExemplo() {
+  const post = (u, d) => api('POST', u, d);
+  const vtrs = [['VTR-01', 'Toyota Hilux', 'QWE1A23'], ['VTR-02', 'Toyota Hilux', 'QWE1A24'], ['VTR-03', 'Mitsubishi L200', 'RTY2B11'],
+    ['VTR-04', 'Renault Master', 'UIO3C45'], ['VTR-05', 'Fiat Ducato', 'PAS4D67'], ['VTR-06', 'VW Gol', 'DFG5E89'],
+    ['VTR-07', 'Chevrolet S10', 'HJK6F01'], ['VTR-08', 'Marcopolo Volare', 'LZX7G23'], ['VTR-09', 'Fiat Strada', 'CVB8H45'],
+    ['VTR-10', 'Iveco Daily', 'NMQ9I67'], ['VTR-11', 'Ford Ranger', 'WER0J89'], ['VTR-12', 'Toyota Corolla', 'TYU1K01']];
+  const v = {};
+  for (const [i, [prefixo, modelo, placa]] of vtrs.entries()) v[prefixo] = (await post('/api/viaturas', { prefixo, modelo, placa, posicao: i + 1 })).id;
+  const p = {};
+  for (const [posto, nome, identificacao, setor, telefone] of [['2S', 'Silva', '1001', 'STS', '(35) 99999-1001'], ['1S', 'Costa', '1002', 'STS'],
+    ['3S', 'Alves', '1003', 'STS'], ['CB', 'Souza', '2001', 'STS', '(35) 99999-2001'], ['S1', 'Lima', '2002', 'STS'], ['S2', 'Ramos', '2003', 'STS'], ['CB', 'Rocha', '3001', 'Rancho']])
+    p[nome] = (await post('/api/pessoas', { posto, nome, identificacao, setor, telefone })).id;
+  // assinatura de exemplo (rabisco)
+  const c = document.createElement('canvas'); c.width = 400; c.height = 120;
+  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, 400, 120); x.strokeStyle = '#0b1f3a'; x.lineWidth = 3; x.beginPath();
+  for (let i = 0; i <= 60; i++) x.lineTo(30 + i * 5.5, 60 + Math.sin(i / 3) * 25 * Math.cos(i / 11)); x.stroke();
+  const ass = c.toDataURL('image/png');
+  await post('/api/servico/assumir', { sargento_id: p.Costa });
+  await post('/api/cautelas/saida', { viatura_id: v['VTR-06'], motorista_id: p.Lima, missao: 'Correio no centro', km_saida: 30500, assinatura: ass });
+  await post('/api/cautelas/retorno', { viatura_id: v['VTR-06'], motorista_id: p.Lima, km_retorno: 30542, assinatura: ass });
+  await post('/api/cautelas/saida', { viatura_id: v['VTR-03'], motorista_id: p.Souza, missao: 'Transporte de material ao Hangar 2', assinatura: ass });
+  await post('/api/servico/assumir', { sargento_id: p.Silva, obs_passagem: 'VTR-03 em missão' });
+  await post('/api/cautelas/saida', { viatura_id: v['VTR-08'], motorista_id: p.Ramos, missao: 'Transporte de cadetes', assinatura: ass });
+  await post(`/api/viaturas/${v['VTR-05']}/manutencao`, { em_manutencao: true, motivo: 'Revisão 50.000 km' });
+  await post('/api/temporarias/entrada', { prefixo: 'RAN-03', modelo: 'Fiat Fiorino', placa: 'RAN3A33', setor_origem: 'Rancho', posicao: 20, entregue_por: 'CB Rocha' });
+}
+
+// ---------- partida ----------
+(async () => {
+  if (!('indexedDB' in window)) {
+    document.body.innerHTML = '<p style="padding:24px;font:18px system-ui">Este navegador não permite guardar dados. Abra o arquivo no <b>Google Chrome</b> ou no <b>Microsoft Edge</b>.</p>';
+    return;
+  }
+  try { await Local.carregar(); } catch (e) {
+    document.body.innerHTML = `<p style="padding:24px;font:18px system-ui">Não foi possível abrir o banco de dados do navegador (${esc(e.message)}).<br>Abra o arquivo no <b>Google Chrome</b> ou no <b>Microsoft Edge</b>, fora do modo anônimo.</p>`;
+    return;
+  }
+  try { navigator.storage?.persist?.(); } catch { /* */ }
+  iniciar();
+  const ult = ultimoBackup(), E = Local.estado();
+  if (E.cautelas.length && (!ult || Date.now() - new Date(ult) > 7 * 864e5)) setTimeout(() => aviso('Lembrete: faça o backup semanal em "Backup"', 'erro'), 1500);
+})();

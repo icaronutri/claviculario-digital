@@ -10,7 +10,7 @@ let porta = Number(process.argv[2] || process.env.PORT) || 8080;
 const tipos = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.json': 'application/json' };
 
 const servidor = http.createServer((req, res) => {
-  let rel = decodeURIComponent(new URL(req.url, 'http://x').pathname).replace(/^\/+/, '') || 'claviculario.html';
+  let rel = decodeURIComponent(new URL(req.url, 'http://x').pathname).replace(/^\/+/, '') || 'index.html';
   const arq = path.normalize(path.join(raiz, rel));
   if (!arq.startsWith(raiz + path.sep) || !fs.existsSync(arq) || fs.statSync(arq).isDirectory()) {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); return res.end('Não encontrado');
@@ -24,9 +24,9 @@ servidor.on('error', (e) => {
 servidor.on('listening', () => {
   const url = `http://localhost:${porta}/`;
   console.log('\n==============================================');
-  console.log('  CLAVICULARIO DIGITAL (versao HTML)');
+  console.log('  CLAVICULARIO DIGITAL');
   console.log(`  Abra: ${url}`);
-  console.log(`  Monitor: ${url}claviculario.html#monitor`);
+  console.log(`  Monitor: ${url}monitor.html`);
   console.log('  NAO FECHE ESTA JANELA enquanto estiver usando.');
   console.log('==============================================\n');
   if (process.argv.includes('--abrir')) {

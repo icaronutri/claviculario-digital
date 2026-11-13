@@ -18,9 +18,9 @@ if (-not $ouvinte) { Write-Host 'Nao consegui abrir nenhuma porta entre 8080 e 8
 $url = "http://localhost:$porta/"
 Write-Host ''
 Write-Host '=============================================='
-Write-Host '  CLAVICULARIO DIGITAL (versao HTML)'
+Write-Host '  CLAVICULARIO DIGITAL'
 Write-Host "  Abra: $url"
-Write-Host "  Monitor: ${url}claviculario.html#monitor"
+Write-Host "  Monitor: ${url}monitor.html"
 Write-Host '  NAO FECHE ESTA JANELA enquanto estiver usando.'
 Write-Host '=============================================='
 Start-Process $url
@@ -30,7 +30,7 @@ while ($ouvinte.IsListening) {
   $resp = $ctx.Response
   try {
     $rel = [Uri]::UnescapeDataString($ctx.Request.Url.AbsolutePath).TrimStart('/')
-    if ($rel -eq '') { $rel = 'claviculario.html' }
+    if ($rel -eq '') { $rel = 'index.html' }
     $arq = [IO.Path]::GetFullPath((Join-Path $raiz $rel))
     if ($arq.StartsWith($raiz) -and (Test-Path -LiteralPath $arq -PathType Leaf)) {
       $bytes = [IO.File]::ReadAllBytes($arq)

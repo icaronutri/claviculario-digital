@@ -155,3 +155,10 @@ select[size] { padding: 4px; }
   .assinatura { height: 200px; }
 }
 @media print { .topo, .filtros, button { display: none !important; } }
+
+/* backup e configurações */
+.bloco { margin-bottom: 16px; }
+.bloco h2 { margin: 0 0 8px; font-size: 1.1rem; }
+.acoes-linha { display: flex; gap: 8px; flex-wrap: wrap; }
+.ok-txt { color: var(--ok); } .alerta-txt { color: var(--perigo); font-weight: 600; }
+.btn.perigo { background: var(--perigo); border-color: var(--perigo); color: #fff; }

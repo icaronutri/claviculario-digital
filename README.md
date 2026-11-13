@@ -1,97 +1,67 @@
 # Claviculário Digital — chaves de viaturas
 
-Substitui o livro físico do Sgt de Dia para a cautela das chaves das viaturas, com **assinatura feita com o dedo na tela** e um **monitor (segunda tela)** que mostra o claviculário em tempo real.
+Sistema para o **Sgt de Dia** controlar as chaves das viaturas, no lugar do livro físico. Tem **assinatura com o dedo na tela** e um **monitor para a segunda tela** que mostra o claviculário em tempo real.
 
-## Como funciona
+Feito só com **HTML, CSS e JavaScript**: roda direto no navegador (Chrome ou Edge), **sem instalar nada e sem internet**.
+
+## Como abrir
+
+| Jeito | Como |
+|---|---|
+| **Dois cliques** | Abra o arquivo **`index.html`** |
+| **Porta local** | Dois cliques em **`ABRIR-NA-PORTA-8080.bat`** e o navegador abre em <http://localhost:8080> (usa o PowerShell do Windows, ou o Node.js se estiver instalado) |
+| **Link (GitHub Pages)** | <https://icaronutri.github.io/claviculario-digital/> (depois de ligar em *Settings → Pages → Branch: main*) |
+
+Para testar: **Backup → Carregar dados de exemplo**.
+
+> Cada jeito de abrir guarda os dados **separadamente**: o navegador trata cada endereço como um site diferente. Escolha um e use sempre o mesmo.
+
+## Cores
 
 | Cor | Situação |
 |---|---|
-| 🟩 Verde | Viatura disponível (chave no claviculário) |
-| 🟨 Amarelo | Viatura em uso (chave cautelada para missão) |
-| 🟥 Vermelho | Viatura em manutenção (não pode sair) |
-| ⬚ Cinza tracejado | Posição vaga |
+| 🟩 Verde | Disponível (chave no claviculário) |
+| 🟨 Amarelo | Em uso (chave cautelada para missão) |
+| 🟥 Vermelho | Em manutenção (não pode sair) |
+| ⬚ Tracejado | Posição vaga |
 
-- **Posições numeradas.** As posições fixas ficam com as viaturas da STS. As posições vagas recebem viaturas **temporárias** de outros setores (ex.: o Rancho deixa uma viatura e o Sgt de Dia coloca a chave na posição 20).
-- **Serviço do Sgt de Dia.** O Sgt **assume o serviço** e, na **passagem de serviço**, o próximo assume. A tela de passagem mostra a conferência das chaves que estão fora. Cada saída e devolução fica registrada no serviço de quem estava de dia.
-- **Saída da viatura.** Registra motorista, viatura (prefixo, modelo e placa), **missão**, destino e odômetro, se quiser. O motorista assina com o dedo e o **horário de saída** é gravado automaticamente.
-- **Devolução.** O motorista que entrega a chave assina; pode ser o mesmo da saída ou outro. O odômetro é opcional e o sistema calcula os km rodados.
-- **Viatura temporária que não volta.** Se a viatura foi direto para o setor de origem, o Sgt marca "não retornou à STS" e a posição fica vaga. A temporária também pode ser devolvida ao setor sem ter saído em missão, com a assinatura de quem recebeu.
-- **Monitor.** Botão **🖥 Monitor** no topo. Abre uma janela para arrastar até o segundo monitor e deixar em tela cheia (⛶). Ela se atualiza sozinha a cada movimentação, se ajusta para caber todas as posições e mostra o relógio e o Sgt de Dia.
-- **Livro de cautelas.** Filtros por período, viatura e serviço; visualização das assinaturas; impressão e **exportação para Excel (CSV)**.
-- **Militares.** Cadastro de posto, nome, SARAM, setor e telefone. Também dá para cadastrar na hora, direto na tela de saída.
-- **Perfis.** *Operador* (computador do Sgt de Dia) e *administrador* (cadastra viaturas fixas, define a quantidade de posições, gerencia usuários e vê a auditoria).
+## O que o sistema faz
 
-## Versão em arquivo único (HTML) — sem instalar nada
+- **Posições numeradas:** cada viatura fixa da STS tem a sua posição. As posições vagas recebem **viaturas temporárias** de outros setores (ex.: Rancho na posição 20).
+- **Serviço do Sgt de Dia:** *Assumir serviço* e *Passagem de serviço*, com a **conferência das chaves que estão fora**. Toda saída e devolução fica ligada ao serviço de quem estava de dia.
+- **Saída:** motorista, viatura (prefixo, modelo e placa), **missão**, destino e odômetro (opcionais) e **assinatura**. O horário é registrado automaticamente.
+- **Devolução:** o motorista que entrega (o mesmo ou outro) assina.
+- **Temporária que não volta:** marque *"não retornou à STS"* e a posição fica vaga. Também dá para devolver a viatura ao setor de origem com a assinatura de quem recebeu.
+- **Manutenção:** a viatura fica vermelha e o sistema não deixa ela sair.
+- **Monitor:** botão **🖥 Monitor**. Arraste a janela para a segunda tela e aperte ⛶. Ele se atualiza sozinho e ajusta o tamanho dos cartões para caber todas as posições.
+- **Livro de cautelas:** filtros, assinaturas, impressão e **exportação para Excel (CSV)**.
+- **Backup:** salva e restaura tudo, inclusive as assinaturas, num arquivo `.json`.
 
-**Online (link):** <https://icaronutri.github.io/claviculario-digital/> (publicado pelo GitHub Pages).
+## ⚠️ Onde ficam os dados
 
-O arquivo **`claviculario.html`** é o sistema inteiro num arquivo só. É só **dar dois cliques** e ele abre no Chrome ou no Edge, sem instalar nada e sem internet.
+Os dados ficam **guardados no navegador do computador** (IndexedDB). Fechar o navegador ou desligar o computador não apaga nada, mas **limpar os dados do navegador apaga**.
 
-- **Teste rápido:** abra o arquivo, vá em **Backup → Carregar dados de exemplo**.
-- **Monitor:** clique em **🖥 Monitor**, arraste a janela para a segunda tela e aperte ⛶.
-- Os dados ficam **guardados no navegador daquele computador**. Faça **Backup → Salvar backup agora** toda semana e guarde o arquivo num pendrive; para recuperar, use **Restaurar um backup**.
+- Faça **Backup → Salvar backup agora** **toda semana** e guarde o arquivo num pendrive ou na rede.
 - Use sempre o **mesmo navegador** e **não use a janela anônima**.
-- Diferença para a versão com servidor (abaixo): não tem login e funciona **só naquele computador**.
+- Os dados **não vão para a internet nem para o GitHub**. O GitHub guarda só o programa.
 
-**Numa porta local (http://localhost:8080):** dê dois cliques em **`ABRIR-HTML-PORTA-8080.bat`**. Ele usa o Node.js, se estiver instalado, ou o PowerShell do Windows (não precisa instalar nada). Os dados ficam separados dos do arquivo aberto com dois cliques, porque o navegador trata cada endereço como um site diferente.
-
-Para gerar o arquivo de novo depois de mudar as telas: `npm run html`.
-
-## Versão com servidor — testar no Windows
-
-1. Instale o **Node.js** (versão **LTS**) em <https://nodejs.org/pt>, clicando em "Avançar" até o fim.
-2. No GitHub, clique em **Code → Download ZIP** e extraia a pasta.
-3. Dê dois cliques em **`INICIAR-TESTE.bat`**. O navegador abre sozinho com **dados de exemplo**.
-   - Login: **sgtdia / sgtdia123** (Sgt de Dia) ou **admin / admin123** (administrador).
-   - Os dados de teste ficam em `dados/teste.db`. Para recomeçar o teste do zero, apague esse arquivo.
-4. Para usar de verdade, com banco limpo, use **`INICIAR.bat`**.
-
-Enquanto estiver usando, **não feche a janela preta** que abre junto: ela é o servidor do sistema.
-
-## Como rodar (linha de comando)
-
-Precisa apenas do [Node.js](https://nodejs.org) **22.13 ou mais novo** — não há dependências para instalar.
-
-```bash
-npm start
-```
-
-Ou `npm run teste` para abrir com dados de exemplo. Abra <http://localhost:3000> e entre com **admin / admin123**. Depois, troque a senha.
-
-### Primeira configuração
-1. **Viaturas → Posições do claviculário**: informe quantos números o claviculário tem (o padrão é 30).
-2. **Viaturas → + Nova viatura**: cadastre as viaturas fixas da STS, cada uma em sua posição.
-3. **Usuários → + Novo usuário**: crie um login *operador* para o computador do Sgt de Dia.
-4. No computador do Sgt de Dia: entre com esse login, clique em **Assumir serviço** e depois em **🖥 Monitor**, e arraste a janela para a segunda tela.
-
-Para usar em outros computadores ou tablets da rede, acesse pelo IP da máquina onde o sistema roda (ex.: `http://192.168.0.10:3000`).
-
-### Configuração (variáveis de ambiente)
-
-| Variável | Padrão | Para que serve |
-|---|---|---|
-| `PORT` | `3000` | Porta do servidor |
-| `DB_PATH` | `dados/claviculario.db` | Arquivo do banco SQLite (**faça backup dele**) |
-| `ADMIN_SENHA` | `admin123` | Senha do admin criado na primeira execução |
-| `POSICOES_INICIAIS` | `30` | Nº de posições criadas na primeira execução |
-| `EXIGIR_ASSINATURA` | `1` | `0` torna a assinatura opcional |
-| `SESSAO_HORAS` | `24` | Tempo sem uso até pedir login de novo (renova a cada uso) |
-| `TZ` | `America/Sao_Paulo` | Fuso das datas no CSV |
-
-## Testes
-
-```bash
-npm test
-```
-
-## Estrutura
+## Arquivos
 
 ```
-server.js             inicia o servidor
-src/db.js             banco SQLite (posições, viaturas, cautelas, serviços…)
-src/app.js            API REST, regras e tempo real (Server-Sent Events)
-public/index.html     tela de controle do Sgt de Dia
-public/monitor.html   monitor (segunda tela)
-public/assinatura.js  quadro de assinatura com o dedo
-test/                 testes da API
+index.html              tela de controle do Sgt de Dia
+monitor.html            monitor (segunda tela)
+css/estilo.css          visual da tela de controle
+css/monitor.css         visual do monitor
+js/armazenamento.js     guarda os dados no navegador (IndexedDB)
+js/regras.js            regras: cautelas, serviço, temporárias, manutenção
+js/comum.js             funções usadas pelas duas telas
+js/assinatura.js        quadro de assinatura com o dedo
+js/app.js               telas do controle
+js/monitor.js           monitor
+icone.svg               ícone
+ABRIR-NA-PORTA-8080.bat abre em http://localhost:8080
+ferramentas/            servidor local simples (PowerShell / Node.js)
+test/                   testes automáticos das regras (node --test)
 ```
+
+A versão anterior, com servidor em Node.js e login, continua no histórico do Git (registro `cb2766a`).
